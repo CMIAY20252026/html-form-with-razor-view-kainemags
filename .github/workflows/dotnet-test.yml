@@ -15,16 +15,21 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build --no-restore
-      - name: Test and Score
+      - name: Test and Show Score
         run: |
-          mkdir -p TestResults
-          dotnet test --no-build --logger "trx;LogFileName=TestResults/test_results.trx" || true
-          
-          passed=$(grep -oP 'Passed:\K\d+' TestResults/test_results.trx | head -1)
-          failed=$(grep -oP 'Failed:\K\d+' TestResults/test_results.trx | head -1)
-          total=$(grep -oP 'Total:\K\d+' TestResults/test_results.trx | head -1)
+          output=$(dotnet test --no-build --verbosity normal || true)
+          echo "$output"
+
+          passed=$(echo "$output" | grep -oP "Passed: \K\d+" | tail -1)
+          failed=$(echo "$output" | grep -oP "Failed: \K\d+" | tail -1)
+          total=$(echo "$output" | grep -oP "Total: \K\d+" | tail -1)
 
           echo "✅ Score: $passed / $total tests passed"
+
+          if [ -z "$failed" ]; then
+            echo "⚠️ Could not parse test results. Check test output."
+            exit 1
+          fi
 
           if [ "$failed" -gt 0 ]; then
             echo "❌ Some tests failed. Failing workflow."
