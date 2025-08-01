@@ -17,17 +17,22 @@ jobs:
         run: dotnet build --no-restore
       - name: Test and Show Score
         run: |
-          output=$(dotnet test --no-build --logger "console;verbosity=detailed" || true)
-          echo "$output"
+          mkdir -p TestResults
+          dotnet test --no-build --logger "trx;LogFileName=TestResults/results.trx" || true
 
-          passed=$(echo "$output" | grep -oP "(?<=Passed: )\d+" | tail -1)
-          failed=$(echo "$output" | grep -oP "(?<=Failed: )\d+" | tail -1)
-          total=$(echo "$output" | grep -oP "(?<=Total: )\d+" | tail -1)
+          if [ ! -f TestResults/results.trx ]; then
+            echo "⚠️ No test results found."
+            exit 1
+          fi
+
+          passed=$(grep -oP '(?<=passed=)\\d+' TestResults/results.trx | tail -1)
+          failed=$(grep -oP '(?<=failed=)\\d+' TestResults/results.trx | tail -1)
+          total=$(grep -oP '(?<=total=)\\d+' TestResults/results.trx | tail -1)
 
           echo "✅ Score: ${passed:-0} / ${total:-0} tests passed"
 
           if [ -z "$failed" ]; then
-            echo "⚠️ Could not parse test results. Check test output."
+            echo "⚠️ Could not parse test results. Check TRX output."
             exit 1
           fi
 
