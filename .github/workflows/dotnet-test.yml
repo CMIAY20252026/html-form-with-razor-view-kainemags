@@ -15,12 +15,15 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build --no-restore
-      - name: Test and Score
+      - name: Run Tests and Capture Output
+        id: tests
+        continue-on-error: true
         run: |
-          # Run tests but don't fail the job yet
-          output=$( (dotnet test --no-build --logger "console;verbosity=detailed" || true) )
-          
-          echo "$output"
+          output=$(dotnet test --no-build --logger "console;verbosity=detailed" || true)
+          echo "$output" > test_output.txt
+      - name: Parse and Show Score
+        run: |
+          output=$(cat test_output.txt)
 
           summary=$(echo "$output" | grep -E "Failed:.*Passed:.*Total:")
           failed=$(echo "$summary" | grep -oP "(?<=Failed:\s*)\d+")
