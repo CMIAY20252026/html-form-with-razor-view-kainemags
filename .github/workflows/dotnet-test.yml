@@ -17,11 +17,9 @@ jobs:
         run: dotnet build --no-restore
       - name: Test and Score
         run: |
-          set +e
-          output=$(dotnet test --no-build --logger "console;verbosity=detailed")
-          exit_code=$?
-          set -e
-
+          # Run tests but don't fail the job yet
+          output=$( (dotnet test --no-build --logger "console;verbosity=detailed" || true) )
+          
           echo "$output"
 
           summary=$(echo "$output" | grep -E "Failed:.*Passed:.*Total:")
