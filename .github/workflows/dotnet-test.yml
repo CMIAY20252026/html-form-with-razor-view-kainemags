@@ -1,4 +1,4 @@
-name: Auto Test HTML Form
+﻿name: Auto Test HTML Form with Score
 
 on: [push, pull_request]
 
@@ -15,5 +15,18 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build --no-restore
-      - name: Test
-        run: dotnet test --no-build --verbosity normal
+      - name: Test and Score
+        run: |
+          mkdir -p TestResults
+          dotnet test --no-build --logger "trx;LogFileName=TestResults/test_results.trx" || true
+          
+          passed=$(grep -oP 'Passed:\K\d+' TestResults/test_results.trx | head -1)
+          failed=$(grep -oP 'Failed:\K\d+' TestResults/test_results.trx | head -1)
+          total=$(grep -oP 'Total:\K\d+' TestResults/test_results.trx | head -1)
+
+          echo "✅ Score: $passed / $total tests passed"
+
+          if [ "$failed" -gt 0 ]; then
+            echo "❌ Some tests failed. Failing workflow."
+            exit 1
+          fi
