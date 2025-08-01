@@ -11,21 +11,24 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
+
       - name: Restore
         run: dotnet restore
       - name: Build
         run: dotnet build --no-restore
-      - name: Run Tests and Capture Output
-        id: tests
-        continue-on-error: true
+
+      - name: Run Tests (Always Continue)
         run: |
-          output=$(dotnet test --no-build --logger "console;verbosity=detailed" || true)
-          echo "$output" > test_output.txt
+          dotnet test --no-build --logger "console;verbosity=detailed" > test_output.txt 2>&1 || true
+
       - name: Parse and Show Score
         run: |
           output=$(cat test_output.txt)
 
-          summary=$(echo "$output" | grep -E "Failed:.*Passed:.*Total:")
+          echo "=== RAW TEST OUTPUT ==="
+          echo "$output"
+
+          summary=$(echo "$output" | grep -E "Failed:.*Passed:.*Total:" | tail -1)
           failed=$(echo "$summary" | grep -oP "(?<=Failed:\s*)\d+")
           passed=$(echo "$summary" | grep -oP "(?<=Passed:\s*)\d+")
           total=$(echo "$summary" | grep -oP "(?<=Total:\s*)\d+")
