@@ -17,14 +17,13 @@ jobs:
         run: dotnet build --no-restore
       - name: Test and Score
         run: |
-          # Run tests and capture full output
           output=$(dotnet test --no-build --logger "console;verbosity=detailed" || true)
           echo "$output"
 
-          # Force extract using regex
-          passed=$(echo "$output" | grep -Eo "Passed: [0-9]+" | tail -1 | awk '{print $2}')
-          failed=$(echo "$output" | grep -Eo "Failed: [0-9]+" | tail -1 | awk '{print $2}')
-          total=$(echo "$output" | grep -Eo "Total: [0-9]+" | tail -1 | awk '{print $2}')
+          summary=$(echo "$output" | grep -E "Failed:.*Passed:.*Total:")
+          failed=$(echo "$summary" | grep -oP "(?<=Failed:\s*)\d+")
+          passed=$(echo "$summary" | grep -oP "(?<=Passed:\s*)\d+")
+          total=$(echo "$summary" | grep -oP "(?<=Total:\s*)\d+")
 
           echo "✅ Score: ${passed:-0} / ${total:-0} tests passed"
 
