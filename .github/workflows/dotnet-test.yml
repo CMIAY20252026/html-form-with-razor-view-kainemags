@@ -29,9 +29,10 @@ jobs:
           echo "$output"
 
           summary=$(echo "$output" | grep -E "Failed:.*Passed:.*Total:" | tail -1)
-          failed=$(echo "$summary" | grep -oP "(?<=Failed:\s*)\d+")
-          passed=$(echo "$summary" | grep -oP "(?<=Passed:\s*)\d+")
-          total=$(echo "$summary" | grep -oP "(?<=Total:\s*)\d+")
+
+          failed=$(echo "$summary" | sed -E 's/.*Failed:[[:space:]]*([0-9]+).*/\1/')
+          passed=$(echo "$summary" | sed -E 's/.*Passed:[[:space:]]*([0-9]+).*/\1/')
+          total=$(echo "$summary" | sed -E 's/.*Total:[[:space:]]*([0-9]+).*/\1/')
 
           echo "✅ Score: ${passed:-0} / ${total:-0} tests passed"
 
