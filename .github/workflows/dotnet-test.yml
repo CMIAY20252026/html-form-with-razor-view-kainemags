@@ -19,7 +19,17 @@ jobs:
 
       - name: Run Tests (Always Continue)
         run: |
+          echo "📂 Listing files:"
+          ls -R
+          echo "📄 Solution files found:"
+          find . -name "*.sln" || true
+          find . -name "*.csproj" || true
+
+          echo "🚀 Running dotnet test..."
           dotnet test --no-build --logger "console;verbosity=detailed" > test_output.txt 2>&1 || true
+
+          echo "📄 Test Output:"
+          cat test_output.txt
 
       - name: Parse and Show Score
         run: |
