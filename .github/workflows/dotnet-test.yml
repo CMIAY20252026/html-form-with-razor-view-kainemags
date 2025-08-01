@@ -17,25 +17,19 @@ jobs:
         run: dotnet build --no-restore
       - name: Test and Score
         run: |
-          mkdir -p TestResults
-          dotnet test --no-build --logger "trx;LogFileName=results.trx" --results-directory TestResults || true
+          # Run tests and capture full output
+          output=$(dotnet test --no-build --logger "console;verbosity=detailed" || true)
+          echo "$output"
 
-          # Find the generated .trx file
-          trx_file=$(find TestResults -name "*.trx" | head -n 1)
-
-          if [ -z "$trx_file" ]; then
-            echo "⚠️ No test results found."
-            exit 1
-          fi
-
-          passed=$(grep -oP '(?<=passed=)\d+' "$trx_file" | tail -1)
-          failed=$(grep -oP '(?<=failed=)\d+' "$trx_file" | tail -1)
-          total=$(grep -oP '(?<=total=)\d+' "$trx_file" | tail -1)
+          # Force extract using regex
+          passed=$(echo "$output" | grep -Eo "Passed: [0-9]+" | tail -1 | awk '{print $2}')
+          failed=$(echo "$output" | grep -Eo "Failed: [0-9]+" | tail -1 | awk '{print $2}')
+          total=$(echo "$output" | grep -Eo "Total: [0-9]+" | tail -1 | awk '{print $2}')
 
           echo "✅ Score: ${passed:-0} / ${total:-0} tests passed"
 
           if [ -z "$failed" ]; then
-            echo "⚠️ Could not parse test results. Check TRX output."
+            echo "⚠️ Could not parse test results. Check test output above."
             exit 1
           fi
 
