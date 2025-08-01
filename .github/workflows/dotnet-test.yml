@@ -17,14 +17,27 @@ jobs:
         run: dotnet build --no-restore
       - name: Test and Score
         run: |
-          output=$(dotnet test --no-build --verbosity normal --logger "console;verbosity=detailed" || true)
-          echo "$output"
+          mkdir -p TestResults
+          dotnet test --no-build --logger "trx;LogFileName=results.trx" --results-directory TestResults || true
 
-          passed=$(echo "$output" | grep -oP "Passed: \K\d+" | tail -1)
-          failed=$(echo "$output" | grep -oP "Failed: \K\d+" | tail -1)
-          total=$(echo "$output" | grep -oP "Total: \K\d+" | tail -1)
+          # Find the generated .trx file
+          trx_file=$(find TestResults -name "*.trx" | head -n 1)
 
-          echo "✅ Score: $passed / $total tests passed"
+          if [ -z "$trx_file" ]; then
+            echo "⚠️ No test results found."
+            exit 1
+          fi
+
+          passed=$(grep -oP '(?<=passed=)\d+' "$trx_file" | tail -1)
+          failed=$(grep -oP '(?<=failed=)\d+' "$trx_file" | tail -1)
+          total=$(grep -oP '(?<=total=)\d+' "$trx_file" | tail -1)
+
+          echo "✅ Score: ${passed:-0} / ${total:-0} tests passed"
+
+          if [ -z "$failed" ]; then
+            echo "⚠️ Could not parse test results. Check TRX output."
+            exit 1
+          fi
 
           if [ "$failed" -gt 0 ]; then
             echo "❌ Some tests failed. Failing workflow."
