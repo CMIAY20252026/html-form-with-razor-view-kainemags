@@ -17,14 +17,14 @@ jobs:
         run: dotnet build --no-restore
       - name: Test and Show Score
         run: |
-          output=$(dotnet test --no-build --verbosity normal || true)
+          output=$(dotnet test --no-build --logger "console;verbosity=detailed" || true)
           echo "$output"
 
-          passed=$(echo "$output" | grep -oP "Passed: \K\d+" | tail -1)
-          failed=$(echo "$output" | grep -oP "Failed: \K\d+" | tail -1)
-          total=$(echo "$output" | grep -oP "Total: \K\d+" | tail -1)
+          passed=$(echo "$output" | grep -oP "(?<=Passed: )\d+" | tail -1)
+          failed=$(echo "$output" | grep -oP "(?<=Failed: )\d+" | tail -1)
+          total=$(echo "$output" | grep -oP "(?<=Total: )\d+" | tail -1)
 
-          echo "✅ Score: $passed / $total tests passed"
+          echo "✅ Score: ${passed:-0} / ${total:-0} tests passed"
 
           if [ -z "$failed" ]; then
             echo "⚠️ Could not parse test results. Check test output."
