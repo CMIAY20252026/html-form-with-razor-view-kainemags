@@ -7,22 +7,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
+
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore StudentFormApp.sln
+
       - name: Build
-        run: dotnet build --no-restore
+        run: dotnet build StudentFormApp.sln --no-restore
+
       - name: Test and Show Score
         run: |
           mkdir -p TestResults
-          dotnet test --no-build --logger "trx;LogFileName=results.trx" --results-directory TestResults || true
+          dotnet test StudentFormApp.sln --no-build --logger "trx;LogFileName=results.trx" --results-directory TestResults || true
+
+          echo "📂 Checking TestResults folder..."
+          find TestResults || true
 
           if [ ! -f TestResults/results.trx ]; then
             echo "⚠️ No test results found in TestResults/results.trx"
-            find TestResults
             exit 1
           fi
 
